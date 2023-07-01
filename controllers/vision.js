@@ -60,6 +60,10 @@ export const updateVision = async (req, res) => {
 	try {
 		await Vision.update({
 			visi,
+		}, {
+			where: {
+				id: req.params.id
+			}
 		});
 		res.status(200).json({
 			msg: "Visi berhasil di update",

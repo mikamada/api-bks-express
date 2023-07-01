@@ -30,11 +30,8 @@ export const addActivity = async (req, res) => {
 			msg: "No file uploaded",
 		});
 
-	// const { title, date, description } = req.body;
-	const title = req.body.title;
-	const date = req.body.date;
-	const description = req.body.description;
-	const file = req.files.file;
+	const { title, date, description } = req.body;
+	const { file } = req.files;
 	const fileSizes = file.data.length;
 	const ext = path.extname(file.name);
 	const fileName = file.md5 + ext;
@@ -90,10 +87,10 @@ export const updateActivity = async (req, res) => {
 		});
 
 	let fileName = "";
-	if (req.files === null) {
-		fileName = Activities.image;
+	if (!req.files || !req.files.file) {
+		fileName = activity.image
 	} else {
-		const file = req.files.file;
+		const file  = req.files.file;
 		const fileSizes = file.data.length;
 		const ext = path.extname(file.name);
 		fileName = file.md5 + ext;
@@ -120,24 +117,26 @@ export const updateActivity = async (req, res) => {
 		});
 	}
 
-	// const { title, date, desc } = req.body;
-	const title = req.body.title;
-	const date = req.body.date;
-	const description = req.body.description;
+	const { title, date, description } = req.body;
 	const url = `${req.protocol}://${req.get(
 		"host"
 	)}/images/activity/${fileName}`;
 
 	try {
-		await Activities.update({
-			title,
-			date,
-			description,
-			image: fileName,
-			imageUrl: url,
-		},{where:{
-			id: req.params.id
-		}});
+		await Activities.update(
+			{
+				title,
+				date,
+				description,
+				image: fileName,
+				imageUrl: url,
+			},
+			{
+				where: {
+					id: req.params.id,
+				},
+			}
+		);
 		res.status(200).json({
 			msg: "Data berhasil di update",
 		});

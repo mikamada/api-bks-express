@@ -14,7 +14,15 @@ const Partners = db.define(
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
+		imageUrl: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
 		mou: {
+			type: DataTypes.STRING,
+			allowNull: false,
+		},
+		mouUrl: {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},

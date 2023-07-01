@@ -2,6 +2,25 @@ import Partners from "../models/PartnerModel.js";
 import path from "path";
 import fs from "fs";
 
+function isFileValid(file, allowedExtensions, maxSize) {
+	if (!file || !allowedExtensions || allowedExtensions.length === 0) {
+		return false;
+	}
+
+	// Check file extension
+	const ext = path.extname(file.name);
+	if (!allowedExtensions.includes(ext.toLowerCase())) {
+		return false;
+	}
+
+	// Check file size
+	if (maxSize > 0 && file.size > maxSize) {
+		return false;
+	}
+
+	return true;
+}
+
 export const getPartners = async (req, res) => {
 	try {
 		const partner = await Partners.findAll();
@@ -23,34 +42,74 @@ export const getPartnerById = async (req, res) => {
 	}
 };
 
-export const addPartner = (req, res) => {
-	if (req.files === null)
-		return res.status(400).json({
-			msg: "No file uploaded",
+export const getMouById = async (req, res) => {
+	try {
+		const partner = await Partners.findOne({
+			where: {
+				id: req.params.id,
+			},
+			attributes: ["mouUrl", "mou"],
 		});
-	const name = req.body.name;
-	const file = req.files.file;
-	const fileSizes = file.data.length;
-	const ext = path.extname(file.name);
-	const fileName = file.md5 + ext;
-	const url = `${req.protocol}://${req.get("host")}/images/partner/${fileName}`;
-	const allowedType = [".png", ".jpg", ".jpeg"];
+		res.json(partner)
+	} catch (error) {
+		console.log(error.message);
+	}
+};
 
-	if (!allowedType.includes(ext.toLocaleLowerCase()))
-		return res.status(422).json({ msg: "Invalid Image" });
+export const addPartner = (req, res) => {
+	if (!req.files || !req.files.file || !req.files.mou) {
+		return res.status(400).json({ msg: "No file uploaded" });
+	}
 
-	if (fileSizes > 2000000)
-		return res.status(422).json({ msg: "Image must be less than 2 MB" });
+	const { name } = req.body;
+	const { file, mou } = req.files;
 
-	file.mv(`./public/images/partner/${fileName}`, async (error) => {
+	if (!isFileValid(file, [".png", ".jpeg", ".jpg"], 2 * 1024 * 1024)) {
+		return res.status(400).json({
+			msg: "Invalid image file. Allowed extensions: png, jpeg, jpg. Maximum size: 2MB",
+		});
+	}
+
+	const extFile = path.extname(file.name);
+	const fileName = file.md5 + extFile;
+	const imageUrl = `${req.protocol}://${req.get(
+		"host"
+	)}/partners/images/${fileName}`;
+
+	file.mv(`./public/partners/images/${fileName}`, async (error) => {
 		if (error) return res.status(500).json({ msg: error.message });
 
-		try {
-			await Partners.create({ name: name, image: fileName, imageUrl: url });
-			res.status(201).json({ msg: "Mitra kerja sama berhasil ditambahkan" });
-		} catch (error) {
-			console.log(error.message);
+		if (!isFileValid(mou, [".docx", ".pdf", ".docs"], 0)) {
+			return res
+				.status(400)
+				.json({ msg: "Invalid mou file. Allowed extensions: docx, pdf, docs" });
 		}
+
+		const extMou = path.extname(mou.name);
+		const mouName = mou.md5 + extMou;
+		const mouUrl = `${req.protocol}://${req.get(
+			"host"
+		)}/partners/mou/${mouName}`;
+
+		mou.mv(`./public/partners/mou/${mouName}`, async (error) => {
+			if (error) {
+				console.error(error);
+				return res.status(500).json({ msg: "Failed to upload mou file" });
+			}
+
+			try {
+				await Partners.create({
+					name,
+					image: fileName,
+					imageUrl,
+					mou: mouName,
+					mouUrl,
+				});
+				res.status(201).json({ msg: "Mitra kerja sama berhasil ditambahkan" });
+			} catch (error) {
+				console.log(error.message);
+			}
+		});
 	});
 };
 
@@ -60,43 +119,67 @@ export const updatePartner = async (req, res) => {
 			id: req.params.id,
 		},
 	});
+
 	if (!partner) return res.status(404).json({ msg: "No data found" });
+
 	let fileName = "";
-	if (req.files === null) {
-		fileName = Partners.image;
+	let mouName = "";
+
+	if (!req.files || !req.files.file || !req.files.mou) {
+		fileName = partner.image;
+		mouName = partner.mou;
 	} else {
-		const file = req.files.file;
-		const fileSizes = file.data.length;
-		const ext = path.extname(file.name);
-		fileName = file.md5 + ext;
-		const allowedType = [".png", ".jpg", ".jpeg"];
+		const { file, mou } = req.files;
 
-		if (!allowedType.includes(ext.toLocaleLowerCase()))
-			return res
-				.status(422)
-				.json({ msg: "Ekstensi gambar harus .png, .jpg, .jpeg" });
+		const extFile = path.extname(file.name);
+		fileName = file.md5 + extFile;
 
-		if (fileSizes > 2000000)
-			return res
-				.status(422)
-				.json({ msg: "Ukuran gambar max 2 MB" });
+		if (!isFileValid(file, [".png", ".jpeg", ".jpg"], 2 * 1024 * 1024)) {
+			return res.status(400).json({
+				msg: "Invalid image file. Allowed extensions: png, jpeg, jpg. Maximum size: 2MB",
+			});
+		}
 
-		const filePath = `./public/images/partner/${partner.image}`;
+		const filePath = `./public/partners/images/${partner.image}`;
 		fs.unlinkSync(filePath);
 
-		file.mv(`./public/images/partner/${fileName}`, (error) => {
+		file.mv(`./public/partners/images/${fileName}`, (error) => {
 			if (error) return res.status(500).json({ msg: error.message });
 		});
+
+		const extMou = path.extname(mou.name);
+		mouName = mou.md5 + extMou;
+
+		if (!isFileValid(mou, [".docx", ".pdf", ".docs"], 0)) {
+			return res.status(400).json({
+				msg: "Invalid mou file. Allowed extensions: docx, pdf, docs",
+			});
+		}
+
+		const mouPath = `./public/partners/mou/${partner.mou}`;
+		fs.unlinkSync(mouPath);
+
+		mou.mv(`./public/partners/mou/${mouName}`, async (error) => {
+			if (error) {
+				console.error(error);
+				return res.status(500).json({ msg: "Failed to upload mou file" });
+			}
+		});
 	}
-	const name = req.body.title;
-	const url = `${req.protocol}://${req.get("host")}/images/partner/${fileName}`;
+	const { name } = req.body;
+	const imageUrl = `${req.protocol}://${req.get(
+		"host"
+	)}/partners/images/${fileName}`;
+	const mouUrl = `${req.protocol}://${req.get("host")}/partners/mou/${mouName}`;
 
 	try {
 		await Partners.update(
 			{
 				name: name,
 				image: fileName,
-				imageUrl: url,
+				imageUrl,
+				mou: mouName,
+				mouUrl,
 			},
 			{
 				where: {
@@ -123,8 +206,10 @@ export const deletePartner = async (req, res) => {
 		});
 
 	try {
-		const filePath = `./public/images/partner/${partner.image}`;
-		fs.unlinkSync(filePath);
+		// const filePath = `./public/partners/images/${partner.image}`;
+		// fs.unlinkSync(filePath);
+		// const mouPath = `./public/partners/mou/${partner.mou}`
+		// fs.unlinkSync(mouPath);
 		await Partners.destroy({
 			where: {
 				id: req.params.id,
