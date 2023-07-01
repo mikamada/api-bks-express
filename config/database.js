@@ -7,8 +7,14 @@ const db = new Sequelize(
 	process.env.USERNAME_DB,
 	process.env.PASSWORD_DB,
 	{
-		host: "localhost",
+		host: process.env.HOST_DB,
 		dialect: "mysql",
+		dialectOptions: {
+			ssl: {
+				require: true,
+				rejectUnauthorized: false,
+			},
+		},
 	}
 );
 
