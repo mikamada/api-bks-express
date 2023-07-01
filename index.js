@@ -43,4 +43,4 @@ app.use(visionRoute);
 app.use(profileRoute);
 // app.use(partnerRoutes);
 
-app.listen(5000, () => console.log("Server running at port 5000"));
+app.listen(5000, process.env.HOST_SERVER, () => console.log(`Server running at ${process.env.HOST_SERVER} port 5000`));
