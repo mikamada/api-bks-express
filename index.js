@@ -9,6 +9,7 @@ import partnerRoute from "./routes/partnerRoute.js";
 import activityRoute from "./routes/activityRoute.js";
 import visionRoute from "./routes/visionRoute.js";
 import profileRoute from "./routes/profileRoute.js";
+import logger from "morgan";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use(
 	})
 );
 
+app.use(logger("dev"));
 app.use(cookieParser());
 app.use(express.json());
 app.use(fileUpload());
@@ -43,4 +45,6 @@ app.use(visionRoute);
 app.use(profileRoute);
 // app.use(partnerRoutes);
 
-app.listen(5000, process.env.HOST_SERVER, () => console.log(`Server running at ${process.env.HOST_SERVER} port 5000`));
+app.listen(5000, process.env.HOST_SERVER, () =>
+	console.log(`Server running at ${process.env.HOST_SERVER} port 5000`)
+);
