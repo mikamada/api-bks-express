@@ -29,7 +29,7 @@ try {
 app.use(
 	cors({
 		credentials: true,
-		origin: ["http://localhost:3000", "http://127.0.0.1:5173", "https://dashboard-admin-bks.vercel.app"],
+		origin: ["http://localhost:3000", process.env.LOCAL_CLIENT, process.env.PRODUCTION_CLIENT],
 	})
 );
 

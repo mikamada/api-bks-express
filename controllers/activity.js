@@ -51,7 +51,10 @@ export const addActivity = async (req, res) => {
 			msg: "Image must be less than 2 MB",
 		});
 
-	file.mv(`./public/images/activity/${fileName}`, async (error) => {
+		const uploadDirectory = path.resolve("./public/images/activity");
+		const filePath = path.join(uploadDirectory, fileName);
+
+	file.mv(filePath, async (error) => {
 		if (error)
 			return res.status(500).json({
 				msg: error.message,
