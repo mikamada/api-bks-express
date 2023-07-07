@@ -45,7 +45,7 @@ app.use(visionRoute);
 app.use(profileRoute);
 // app.use(partnerRoutes);
 
-const port = process.env.PORT || 3000;
+const port = 3000;
 
 app.listen(port, process.env.HOST_SERVER, () =>
 	console.log(`Server running at ${process.env.HOST_SERVER} port ${port}`)
