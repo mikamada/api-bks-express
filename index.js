@@ -10,6 +10,13 @@ import activityRoute from "./routes/activityRoute.js";
 import visionRoute from "./routes/visionRoute.js";
 import profileRoute from "./routes/profileRoute.js";
 import logger from "morgan";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+	cloud_name: "dygyevmnq",
+	api_key: "392855657978464",
+	api_secret: "CF_nWaSekpsdo97fJEmDxhHTYt8",
+});
 
 dotenv.config();
 
@@ -29,7 +36,11 @@ try {
 app.use(
 	cors({
 		credentials: true,
-		origin: ["http://localhost:3000", process.env.LOCAL_CLIENT, process.env.PRODUCTION_CLIENT],
+		origin: [
+			"http://localhost:3000",
+			process.env.LOCAL_CLIENT,
+			process.env.PRODUCTION_CLIENT,
+		],
 	})
 );
 
@@ -47,6 +58,6 @@ app.use(profileRoute);
 
 const port = 3000;
 
-app.listen(port, process.env.HOST_SERVER, () =>
+app.listen(port, () =>
 	console.log(`Server running at ${process.env.HOST_SERVER} port ${port}`)
 );

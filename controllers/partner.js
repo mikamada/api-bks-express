@@ -1,25 +1,5 @@
 import Partners from "../models/PartnerModel.js";
-import path from "path";
-import fs from "fs";
-
-function isFileValid(file, allowedExtensions, maxSize) {
-	if (!file || !allowedExtensions || allowedExtensions.length === 0) {
-		return false;
-	}
-
-	// Check file extension
-	const ext = path.extname(file.name);
-	if (!allowedExtensions.includes(ext.toLowerCase())) {
-		return false;
-	}
-
-	// Check file size
-	if (maxSize > 0 && file.size > maxSize) {
-		return false;
-	}
-
-	return true;
-}
+import { v2 as cloudinary } from "cloudinary";
 
 export const getPartners = async (req, res) => {
 	try {
@@ -48,138 +28,82 @@ export const getMouById = async (req, res) => {
 			where: {
 				id: req.params.id,
 			},
-			attributes: ["mouUrl", "mou"],
+			attributes: ["mou"],
 		});
-		res.json(partner)
+		res.json(partner);
 	} catch (error) {
 		console.log(error.message);
 	}
 };
 
-export const addPartner = (req, res) => {
-	if (!req.files || !req.files.file || !req.files.mou) {
+export const addNewPartner = async (req, res) => {
+	if (!req.body) {
 		return res.status(400).json({ msg: "No file uploaded" });
 	}
 
-	const { name } = req.body;
-	const { file, mou } = req.files;
+	const { name, image, mou } = req.body;
 
-	if (!isFileValid(file, [".png", ".jpeg", ".jpg"], 2 * 1024 * 1024)) {
-		return res.status(400).json({
-			msg: "Invalid image file. Allowed extensions: png, jpeg, jpg. Maximum size: 2MB",
+	try {
+		const resultImg = await cloudinary.uploader.upload(image, {
+			tags: "partner_logo",
 		});
+		const resultMou = await cloudinary.uploader.upload(mou, {
+			tags: "mou_partner",
+		});
+
+		console.log({ resultImg, resultMou });
+
+		await Partners.create({
+			name,
+			image: resultImg.secure_url,
+			mou: resultMou.secure_url,
+		});
+		res.status(201).json({
+			msg: "Mitra berhasil ditambahkan",
+		});
+	} catch (error) {
+		console.error(error.message);
 	}
-
-	const extFile = path.extname(file.name);
-	const fileName = file.md5 + extFile;
-	const imageUrl = `${req.protocol}://${req.get(
-		"host"
-	)}/partners/images/${fileName}`;
-
-	file.mv(`./public/partners/images/${fileName}`, async (error) => {
-		if (error) return res.status(500).json({ msg: error.message });
-
-		if (!isFileValid(mou, [".docx", ".pdf", ".docs"], 0)) {
-			return res
-				.status(400)
-				.json({ msg: "Invalid mou file. Allowed extensions: docx, pdf, docs" });
-		}
-
-		const extMou = path.extname(mou.name);
-		const mouName = mou.md5 + extMou;
-		const mouUrl = `${req.protocol}://${req.get(
-			"host"
-		)}/partners/mou/${mouName}`;
-
-		mou.mv(`./public/partners/mou/${mouName}`, async (error) => {
-			if (error) {
-				console.error(error);
-				return res.status(500).json({ msg: "Failed to upload mou file" });
-			}
-
-			try {
-				await Partners.create({
-					name,
-					image: fileName,
-					imageUrl,
-					mou: mouName,
-					mouUrl,
-				});
-				res.status(201).json({ msg: "Mitra kerja sama berhasil ditambahkan" });
-			} catch (error) {
-				console.log(error.message);
-			}
-		});
-	});
 };
 
-export const updatePartner = async (req, res) => {
+export const updatePartnerById = async (req, res) => {
 	const partner = await Partners.findOne({
 		where: {
 			id: req.params.id,
 		},
 	});
 
-	if (!partner) return res.status(404).json({ msg: "No data found" });
-
-	let fileName = "";
-	let mouName = "";
-
-	if (!req.files || !req.files.file || !req.files.mou) {
-		fileName = partner.image;
-		mouName = partner.mou;
-	} else {
-		const { file, mou } = req.files;
-
-		const extFile = path.extname(file.name);
-		fileName = file.md5 + extFile;
-
-		if (!isFileValid(file, [".png", ".jpeg", ".jpg"], 2 * 1024 * 1024)) {
-			return res.status(400).json({
-				msg: "Invalid image file. Allowed extensions: png, jpeg, jpg. Maximum size: 2MB",
-			});
-		}
-
-		const filePath = `./public/partners/images/${partner.image}`;
-		fs.unlinkSync(filePath);
-
-		file.mv(`./public/partners/images/${fileName}`, (error) => {
-			if (error) return res.status(500).json({ msg: error.message });
+	if (!partner)
+		return res.status(400).json({
+			msg: "No data found",
 		});
 
-		const extMou = path.extname(mou.name);
-		mouName = mou.md5 + extMou;
-
-		if (!isFileValid(mou, [".docx", ".pdf", ".docs"], 0)) {
-			return res.status(400).json({
-				msg: "Invalid mou file. Allowed extensions: docx, pdf, docs",
-			});
-		}
-
-		const mouPath = `./public/partners/mou/${partner.mou}`;
-		fs.unlinkSync(mouPath);
-
-		mou.mv(`./public/partners/mou/${mouName}`, async (error) => {
-			if (error) {
-				console.error(error);
-				return res.status(500).json({ msg: "Failed to upload mou file" });
-			}
-		});
-	}
-	const { name } = req.body;
-	const imageUrl = `${req.protocol}://${req.get(
-		"host"
-	)}/partners/images/${fileName}`;
-	const mouUrl = `${req.protocol}://${req.get("host")}/partners/mou/${mouName}`;
+	const { image, mou, name } = req.body;
+	console.log(req.body);
 
 	try {
+		if (name) {
+			partner.name = name;
+		}
+		if (mou && partner.mou !== mou) {
+			const result = await cloudinary.uploader.upload(mou, {
+				tags: "partner_mou",
+			});
+			partner.mou = result.secure_url;
+		}
+
+		if (image && partner.image !== image) {
+			const result = await cloudinary.uploader.upload(image, {
+				tags: "partner_logo",
+			});
+			console.log({ result });
+			partner.image = result.secure_url;
+		}
 		await Partners.update(
 			{
-				name: name,
-				image: fileName,
-				imageUrl,
-				mou: mouName,
-				mouUrl,
+				name: partner.name,
+				mou: partner.mou,
+				image: partner.image,
 			},
 			{
 				where: {
@@ -187,7 +111,9 @@ export const updatePartner = async (req, res) => {
 				},
 			}
 		);
-		res.status(200).json({ msg: "Data berhasil di update" });
+		res.status(200).json({
+			msg: "Data berhasil di update",
+		});
 	} catch (error) {
 		console.log(error.message);
 	}
@@ -206,10 +132,6 @@ export const deletePartner = async (req, res) => {
 		});
 
 	try {
-		// const filePath = `./public/partners/images/${partner.image}`;
-		// fs.unlinkSync(filePath);
-		// const mouPath = `./public/partners/mou/${partner.mou}`
-		// fs.unlinkSync(mouPath);
 		await Partners.destroy({
 			where: {
 				id: req.params.id,
