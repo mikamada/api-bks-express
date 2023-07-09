@@ -1,6 +1,5 @@
 import Activities from "../models/ActivityModel.js";
-import path from "path";
-import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
 
 export const getActivities = async (req, res) => {
 	try {
@@ -24,57 +23,36 @@ export const getActivityById = async (req, res) => {
 	}
 };
 
-export const addActivity = async (req, res) => {
-	if (req.file === null)
+export const uploadActivity = async (req, res) => {
+	const { image, title, date, description } = req.body;
+
+	if (!req.body) {
 		return res.status(400).json({
 			msg: "No file uploaded",
 		});
-
-	const { title, date, description } = req.body;
-	const { file } = req.files;
-	const fileSizes = file.data.length;
-	const ext = path.extname(file.name);
-	const fileName = file.md5 + ext;
-	const url = `${req.protocol}://${req.get(
-		"host"
-	)}/images/activity/${fileName}`;
-
-	const allowedType = [".png", ".jpg", ".jpeg"];
-
-	if (!allowedType.includes(ext.toLocaleLowerCase()))
-		return res.status(422).json({
-			msg: "Invalid image",
-		});
-
-	if (fileSizes > 2000000)
-		return res.status(422).json({
-			msg: "Image must be less than 2 MB",
-		});
-
-	file.mv(`./public/images/activity/${fileName}`, async (error) => {
-		if (error)
-			return res.status(500).json({
-				msg: error.message,
-			});
-	});
+	}
 
 	try {
+		const result = await cloudinary.uploader.upload(image, {
+			tags: "activity_image",
+		});
+		console.log({ result });
+
 		await Activities.create({
 			title,
 			date,
+			image: result.secure_url,
 			description,
-			image: fileName,
-			imageUrl: url,
 		});
 		res.status(201).json({
 			msg: "Aktifitas berhasil ditambahkan",
 		});
 	} catch (error) {
-		console.log(error.message);
+		console.error(error.message);
 	}
 };
 
-export const updateActivity = async (req, res) => {
+export const updateActivityById = async (req, res) => {
 	const activity = await Activities.findOne({
 		where: {
 			id: req.params.id,
@@ -86,50 +64,34 @@ export const updateActivity = async (req, res) => {
 			msg: "No data found",
 		});
 
-	let fileName = "";
-	if (!req.files || !req.files.file) {
-		fileName = activity.image
-	} else {
-		const file  = req.files.file;
-		const fileSizes = file.data.length;
-		const ext = path.extname(file.name);
-		fileName = file.md5 + ext;
-		const allowedType = [".png", ".jpg", ".jpeg"];
+	const { title, date, description, image } = req.body;
+	console.log(req.body);
 
-		if (!allowedType.includes(ext.toLocaleLowerCase()))
-			return res.status(422).json({
-				msg: "Ekstensi gambar harus .png, .jpg, .jpeg",
-			});
-
-		if (fileSizes > 2000000)
-			return res.status(422).json({
-				msg: "Ukuran gambar max 2 MB",
-			});
-
-		const filePath = `./public/images/activity/${activity.image}`;
-		fs.unlinkSync(filePath);
-
-		file.mv(`./public/images/activity/${fileName}`, (error) => {
-			if (error)
-				return res.status(500).json({
-					msg: error.message,
-				});
-		});
+	if (title) {
+		activity.title = title;
+	}
+	if (date) {
+		activity.date = date;
+	}
+	if (description) {
+		activity.description = description;
 	}
 
-	const { title, date, description } = req.body;
-	const url = `${req.protocol}://${req.get(
-		"host"
-	)}/images/activity/${fileName}`;
+	if (image) {
+		const result = await cloudinary.uploader.upload(image, {
+			tags: "activity_image",
+		});
+		console.log({ result });
+		activity.image = result.secure_url;
+	}
 
 	try {
 		await Activities.update(
 			{
-				title,
-				date,
-				description,
-				image: fileName,
-				imageUrl: url,
+				title: activity.title,
+				date: activity.date,
+				description: activity.description,
+				image: activity.image,
 			},
 			{
 				where: {
@@ -158,8 +120,6 @@ export const deleteActivity = async (req, res) => {
 		});
 
 	try {
-		const filePath = `./public/images/activity/${activity.image}`;
-		fs.unlinkSync(filePath);
 		await Activities.destroy({
 			where: {
 				id: req.params.id,

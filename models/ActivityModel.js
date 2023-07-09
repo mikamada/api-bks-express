@@ -14,16 +14,13 @@ const Activities = db.define(
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		imageUrl: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
 		date: {
 			type: DataTypes.STRING,
+			allowNull: false,
 		},
 		description: {
 			type: DataTypes.STRING,
-			allowNull: false,
+			allowNull: true,
 		},
 	},
 	{ freezeTableName: true }
