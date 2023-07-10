@@ -78,6 +78,32 @@ export const login = async (req, res) => {
 	}
 };
 
+export const deleteUser = async (req, res) => {
+	const user = await Users.findOne({
+		where: {
+			id: req.params.id,
+		},
+	});
+
+	if (!user)
+		return res.status(400).json({
+			msg: "No data found",
+		});
+
+	try {
+		await Users.destroy({
+			where: {
+				id: req.params.id,
+			},
+		});
+		res.status(200).json({
+			msg: "Deleted",
+		});
+	} catch (error) {
+		console.log(error.message);
+	}
+};
+
 export const logout = async (req, res) => {
 	const accessToken = req.cookies.accessToken;
 	if (!refreshToken) return res.sendStatus(204);
