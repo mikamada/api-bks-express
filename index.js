@@ -40,6 +40,7 @@ app.use(
 			"http://localhost:3000",
 			process.env.LOCAL_CLIENT,
 			process.env.PRODUCTION_CLIENT,
+			process.env.FRONT_CLIENT
 		],
 	})
 );
