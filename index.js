@@ -38,6 +38,7 @@ app.use(
 		credentials: true,
 		origin: [
 			"http://localhost:3000",
+			"http://localhost",
 			process.env.LOCAL_CLIENT,
 			process.env.PRODUCTION_CLIENT,
 			process.env.FRONT_CLIENT
