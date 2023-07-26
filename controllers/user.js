@@ -2,6 +2,15 @@ import Users from "../models/UserModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+export const getUserCount = async (req, res) => {
+	try {
+		const totalCount = await Users.count();
+		res.json(totalCount);
+	} catch (error) {
+		console.log(error.message);
+	}
+};
+
 export const getAllUser = async (req, res) => {
 	try {
 		const user = await Users.findAll({

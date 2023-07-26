@@ -7,10 +7,12 @@ import {
 	updatePartnerById,
 	deletePartner,
 	getMouById,
+	getUserCount
 } from "../controllers/partner.js";
 
 const router = express.Router();
 
+router.get("/partners/count", getUserCount);
 router.get("/partners", getPartners);
 router.get("/partners/:id", getPartnerById);
 router.get("/partners/mou/:id", getMouById)

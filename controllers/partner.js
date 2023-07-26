@@ -1,6 +1,15 @@
 import Partners from "../models/PartnerModel.js";
 import { v2 as cloudinary } from "cloudinary";
 
+export const getUserCount = async (req, res) => {
+	try {
+		const totalPartnerCount = await Partners.count();
+		res.json(totalPartnerCount);
+	} catch (error) {
+		console.log(error.message);
+	}
+};
+
 export const getPartners = async (req, res) => {
 	try {
 		const partner = await Partners.findAll();

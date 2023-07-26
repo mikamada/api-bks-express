@@ -6,11 +6,13 @@ import {
 	register,
 	login,
 	deleteUser,
+	getUserCount,
 } from "../controllers/user.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
 
+router.get("/users/count", getUserCount);
 router.get("/users", getAllUser);
 router.post("/users", register);
 router.post("/login", login);

@@ -9,6 +9,7 @@ import partnerRoute from "./routes/partnerRoute.js";
 import activityRoute from "./routes/activityRoute.js";
 import visionRoute from "./routes/visionRoute.js";
 import profileRoute from "./routes/profileRoute.js";
+import contentRoute from "./routes/contentRoute.js";
 import logger from "morgan";
 import { v2 as cloudinary } from "cloudinary";
 
@@ -41,7 +42,7 @@ app.use(
 			"http://localhost",
 			process.env.LOCAL_CLIENT,
 			process.env.PRODUCTION_CLIENT,
-			process.env.FRONT_CLIENT
+			process.env.FRONT_CLIENT,
 		],
 	})
 );
@@ -56,7 +57,7 @@ app.use(partnerRoute);
 app.use(activityRoute);
 app.use(visionRoute);
 app.use(profileRoute);
-// app.use(partnerRoutes);
+app.use(contentRoute);
 
 const port = 3000;
 

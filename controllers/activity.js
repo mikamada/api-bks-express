@@ -1,6 +1,15 @@
 import Activities from "../models/ActivityModel.js";
 import { v2 as cloudinary } from "cloudinary";
 
+export const getActivitiesCount = async (req, res) => {
+	try {
+		const totalCount = await Activities.count();
+		res.json(totalCount);
+	} catch (error) {
+		console.log(error.message);
+	}
+};
+
 export const getActivities = async (req, res) => {
 	try {
 		const activity = await Activities.findAll();
