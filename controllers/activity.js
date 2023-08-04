@@ -61,6 +61,34 @@ export const uploadActivity = async (req, res) => {
 	}
 };
 
+export const addNewActivity = async (req, res) => {
+	if (!req.body) {
+		return res.status(400).json({
+			msg: "No data uploaded",
+		});
+	}
+
+	const { title, date, image, description } = req.body;
+
+	try {
+		const resultImg = await cloudinary.uploader.upload(image, {
+			tags: "activity_image",
+		});
+
+		await Activities.create({
+			title,
+			date,
+			description,
+			image: resultImg.secure_url,
+		});
+		res.status(201).json({
+			msg: "Upload Success",
+		});
+	} catch (error) {
+		console.log(error.message);
+	}
+};
+
 export const updateActivityById = async (req, res) => {
 	const activity = await Activities.findOne({
 		where: {
@@ -74,7 +102,7 @@ export const updateActivityById = async (req, res) => {
 		});
 
 	const { title, date, description, image } = req.body;
-	console.log(req.body);
+	
 
 	if (title) {
 		activity.title = title;

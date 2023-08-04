@@ -51,28 +51,24 @@ export const updateContent = async (req, res) => {
 		},
 	});
 
-	if (!contentId) {
+	if (!contentId)
 		return res.status(400).json({
 			msg: "No data found",
 		});
-	}
 
-	const { content, type } = req.params.id;
+	const {content} = req.body;
 
 	try {
-		await Contents.update(
-			{
-				content,
-				type,
-			},
-			{
-				where: {
-					id: req.params.id,
-				},
+		await Contents.update({
+			content,
+			type: contentId.type
+		}, {
+			where: {
+				id: req.params.id
 			}
-		);
+		});
 		res.status(200).json({
-			msg: "Berhasil di update",
+			msg: "Profile berhasil di update",
 		});
 	} catch (error) {
 		console.log(error.message);
