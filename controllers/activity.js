@@ -3,8 +3,8 @@ import { v2 as cloudinary } from "cloudinary";
 
 export const getActivitiesCount = async (req, res) => {
 	try {
-		const totalCount = await Activities.count();
-		res.json(totalCount);
+		const totalPartnerCount = await Activities.count();
+		res.json(totalPartnerCount);
 	} catch (error) {
 		console.log(error.message);
 	}
